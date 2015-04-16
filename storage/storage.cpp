@@ -17,6 +17,9 @@
 #include <cstdlib>
 using namespace std;
 
+#ifdef CONFIG_USING_BUFFER
+Buffer Storage::buffer;
+#endif
 
 Storage::Storage()
 {
@@ -40,7 +43,7 @@ void Storage::create_file(const char * path)
 	// Write header info
 	StorageHeader header;
 	memset(&header, 0, SizeOfStorageHeader);
-	memcpy(header.magic, "Seaweed DB File", 16);
+	memcpy(header.magic, MagicString, 16);
 	
 	if (write(fd_new, &header, SizeOfStorageHeader) < SizeOfStorageHeader)
 		throw logic_error("unable to write file");
@@ -51,7 +54,7 @@ void Storage::create_file(const char * path)
 	
 	if (write(fd_new, bitmap, SizeOfBitmap) < SizeOfBitmap)
 		throw logic_error("unable to write file");
-	delete bitmap;
+	delete[] bitmap;
 
 	close(fd_new);
 }
@@ -84,6 +87,9 @@ bool Storage::is_opening()
 
 void Storage::close_file()
 {
+#ifdef CONFIG_USING_BUFFER
+	buffer.clear(fd);
+#endif
 	if (dirty == true)
 	{
 		lseek(fd, 0, SEEK_SET);
@@ -96,8 +102,22 @@ void Storage::close_file()
 	fd = -1;
 }
 
+#ifdef CONFIG_USING_BUFFER
+void Storage::unpin_page(int page_num)
+{
+	if (!is_opening())
+		throw logic_error("file not opened currently");
+	if (page_num < 0 || page_num >= shadow.allot_pages)
+		throw domain_error("page_num out of range");
+	if (get_slot_property(bitmap[page_num], UsedBit) == false)
+		throw logic_error("page is not used");
+	buffer.unpin_page(fd, page_num);	
+}
+#endif
+
 int Storage::acquire_page()
 {
+
 	if (!is_opening())
 		throw logic_error("file not opened currently");
 	// first, we scan for the vaild but not used page
@@ -105,16 +125,24 @@ int Storage::acquire_page()
 	for (; i < shadow.allot_pages; i++)
 		if (get_slot_property(bitmap[i], VaildBit) == true && get_slot_property(bitmap[i], UsedBit) == false)
 			break;
+
 	if (i == shadow.allot_pages)
 	{  
+#ifndef CONFIG_USING_BUFFER
 		// need to fresh out new page
 		lseek(fd, 0, SEEK_END);
 		byte new_page[SizeOfPage] = { 0 };
 		if (write(fd, new_page, SizeOfPage) < SizeOfPage)
 			throw logic_error("unable to write file");
+#else
+		byte * ptr = buffer.acquire_page(fd, i);
+		memset(ptr, 0, SizeOfPage);
+		buffer.mark_dirty(fd, i);
+		buffer.unpin_page(fd, i);
+#endif
 		shadow.allot_pages++;
 		set_slot_property(bitmap[i], VaildBit);
-	}
+	}	
 	dirty = true;
 	set_slot_property(bitmap[i], UsedBit);
 	shadow.used_pages++;
@@ -129,9 +157,13 @@ void Storage::release_page(int page_num)
 		throw domain_error("page_num out of range");
 	if (get_slot_property(bitmap[page_num], UsedBit) == false)
 		throw logic_error("page is not used");
-	dirty = true;
+	dirty = true;	
 	clear_slot_property(bitmap[page_num], UsedBit);
 	shadow.used_pages--;
+#ifdef CONFIG_USING_BUFFER
+	buffer.fetch_page(fd, page_num, false);
+	buffer.unpin_page(fd, page_num);
+#endif
 }
 
 byte * Storage::get_page_content(int page_num)
@@ -143,6 +175,7 @@ byte * Storage::get_page_content(int page_num)
 		throw domain_error("page_num out of range");
 	if (get_slot_property(bitmap[page_num], UsedBit) == false)
 		throw logic_error("page is not used");
+#ifndef CONFIG_USING_BUFFER
 	byte * p_buffer = new char[SizeOfPage];
 	if (p_buffer == NULL)
 		throw overflow_error("out of memory");
@@ -151,8 +184,12 @@ byte * Storage::get_page_content(int page_num)
 
 	lseek(fd, location, SEEK_SET);
 	if (read(fd, p_buffer, SizeOfPage) < SizeOfPage)
-		perror("fuck"), throw logic_error("unable to read file");
+		throw logic_error("unable to read file");
 	return p_buffer;
+#else
+	return buffer.fetch_page(fd, page_num);
+	buffer.mark_dirty(fd, page_num);
+#endif
 }
 
 void Storage::update_page_content(int page_num, byte * content)
@@ -163,9 +200,24 @@ void Storage::update_page_content(int page_num, byte * content)
 		throw domain_error("page_num out of range");
 	if (get_slot_property(bitmap[page_num], UsedBit) == false)
 		throw logic_error("page is not used");
+	
+	if (dirty == true)
+	{
+		lseek(fd, 0, SEEK_SET);
+		if (write(fd, &shadow, SizeOfStorageHeader) < SizeOfStorageHeader)
+			throw logic_error("unable to write file");		
+		if (write(fd, bitmap, SizeOfBitmap) < SizeOfBitmap)
+			throw logic_error("unable to write file");	
+	}
+
+#ifndef CONFIG_USING_BUFFER
 
 	uint32_t location = SizeOfStorageHeader + SizeOfBitmap + page_num * SizeOfPage;
 	lseek(fd, location, SEEK_SET);
 	if (write(fd, content, SizeOfPage) < SizeOfPage)
 		throw logic_error("unable to write file");
+#else
+	buffer.apply(fd, page_num);
+
+#endif
 }

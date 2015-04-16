@@ -9,6 +9,7 @@
 #define __STORAGE_H__
 
 #include "generic.h"
+#include "buffer.h"
 
 // HACK FOR TEST
 #define private public
@@ -19,7 +20,6 @@
 // As a limitation of this program, The page bitmap should be 1KB, which 
 // means that the maximal file size is 4GiB.
 
-const uint32_t SizeOfStorageHeader = 64;
 struct StorageHeader 
 {
 	char magic[16];		// should be "Seaweed DB File\0"
@@ -28,9 +28,6 @@ struct StorageHeader
 	uint32_t bitmap_checksum;
 	char reserved[36];
 };
-
-const uint32_t SizeOfBitmap = 1024;
-typedef byte Slot;
 
 // each bitmap item is 8-bit (1 byte), as the figure below shown
 // *------------------------*-----*-----*-----*-----*
@@ -74,8 +71,14 @@ public:
 	int acquire_page();
 	void release_page(int page_num);
 	byte * get_page_content(int page_num);
+#ifdef CONFIG_USING_BUFFER
+	void unpin_page(int page_num);
+#endif
 	void update_page_content(int page_num, byte * content);
 private:
+#ifdef CONFIG_USING_BUFFER
+	static Buffer buffer;
+#endif
 	StorageHeader shadow;
 	bool dirty;
 	Slot bitmap[SizeOfBitmap];

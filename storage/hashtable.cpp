@@ -60,7 +60,7 @@ void HashTable::insert(int fd, int page_num, int slot)
     if (find(fd, page_num) != -1)
         throw logic_error("fd page_num pair existed");
     
-    HashEntry *entry = new HashEntry;
+    HashEntry * entry = new HashEntry;
     if (entry == NULL)
         throw overflow_error("out of memory");
     

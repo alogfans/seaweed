@@ -61,11 +61,14 @@ TEST(storage_test, page_ops)
 
     int n1 = storage.acquire_page();
     EXPECT_EQ(n1, 0);
+
     int n2 = storage.acquire_page();
     EXPECT_EQ(n2, 1);
+
     EXPECT_EQ(storage.shadow.allot_pages, 2);
     EXPECT_EQ(storage.shadow.used_pages, 2);
     storage.release_page(n2);
+
     EXPECT_EQ(storage.shadow.allot_pages, 2);
     EXPECT_EQ(storage.shadow.used_pages, 1);
     n2 = storage.acquire_page();
@@ -77,15 +80,19 @@ TEST(storage_test, page_ops)
     strcpy(ptr, "Hello World!");
 
     storage.update_page_content(n1, ptr);
-    delete ptr;
+    storage.unpin_page(n1);
     storage.release_page(n2);
     storage.close_file();
 
     storage.open_file("test.db");
     ptr = storage.get_page_content(n1);
+
     EXPECT_STREQ(ptr, "Hello World!");
+    storage.unpin_page(n1);
+
     EXPECT_THROW(storage.get_page_content(n2), logic_error);
     EXPECT_THROW(storage.get_page_content(155), domain_error);
+
     storage.close_file();
 
     storage.destory_file("test.db");

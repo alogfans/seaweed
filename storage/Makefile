@@ -11,7 +11,7 @@ INCLUDE := ../include
 LIBS := ../lib
 
 EXEC := storage_test
-DEPS := storage.cpp
+DEPS := storage.cpp buffer.cpp hashtable.cpp
 
 
 $(EXEC):
@@ -20,4 +20,4 @@ $(EXEC):
 	$(RM) $(EXEC)
 
 clean:
-	$(RM) *.o $(EXEC)
+	$(RM) *.o $(EXEC) test.db

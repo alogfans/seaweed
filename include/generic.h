@@ -17,5 +17,14 @@ typedef char byte;
 #endif
 
 const uint32_t SizeOfPage = 4096;
+const uint32_t SizeOfStorageHeader = 64;
+const char MagicString[] = "Seaweed DB File";
+
+const uint32_t SizeOfBitmap = 1024;
+typedef byte Slot;
+
+// If using buffer componment, set this def.
+// Remove this define will use direct-write technique.
+#define CONFIG_USING_BUFFER
 
 #endif
