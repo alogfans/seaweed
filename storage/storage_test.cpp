@@ -96,7 +96,44 @@ TEST(storage_test, page_ops)
     storage.close_file();
 
     storage.destory_file("test.db");
+    // storage.buffer.show();
 }
+
+TEST(storage_test, page_ops_adv)
+{
+    Storage storage;
+    storage.create_file("test.db");
+    storage.open_file("test.db");
+
+    for (int i = 0; i < 100; i++)
+    {
+        EXPECT_EQ(i, storage.acquire_page());
+
+        byte * ptr = storage.get_page_content(i);
+        strcpy(ptr, "Hello World");
+        storage.update_page_content(i, ptr);
+        storage.unpin_page(i);
+    }
+    for (int i = 1; i < 100; i += 2)
+        storage.release_page(i);
+    storage.close_file();
+
+    storage.open_file("test.db");
+    for (int i = 0; i < 100; i++)
+    {
+        if (i % 2)
+            EXPECT_THROW(storage.get_page_content(i), logic_error);
+        else
+        {
+            EXPECT_STREQ(storage.get_page_content(i), "Hello World");
+            storage.unpin_page(i);
+        }
+
+    }
+    storage.close_file();
+    storage.destory_file("test.db");
+}
+
 
 int main(int argc, char *argv[])
 {

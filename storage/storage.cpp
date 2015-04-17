@@ -77,7 +77,7 @@ void Storage::open_file(const char * path)
 	if (read(fd, &shadow, SizeOfStorageHeader) < SizeOfStorageHeader)
 		throw logic_error("unable to read file");
 	if (read(fd, bitmap, SizeOfBitmap) < SizeOfBitmap)
-		throw logic_error("unable to read file");	
+		throw logic_error("unable to read file");
 }
 
 bool Storage::is_opening()
@@ -88,7 +88,7 @@ bool Storage::is_opening()
 void Storage::close_file()
 {
 #ifdef CONFIG_USING_BUFFER
-	buffer.clear(fd);
+	buffer.clear();
 #endif
 	if (dirty == true)
 	{
@@ -123,7 +123,7 @@ int Storage::acquire_page()
 	// first, we scan for the vaild but not used page
 	int i = 0;
 	for (; i < shadow.allot_pages; i++)
-		if (get_slot_property(bitmap[i], VaildBit) == true && get_slot_property(bitmap[i], UsedBit) == false)
+		if (get_slot_property(bitmap[i], UsedBit) == false)
 			break;
 
 	if (i == shadow.allot_pages)
@@ -187,8 +187,9 @@ byte * Storage::get_page_content(int page_num)
 		throw logic_error("unable to read file");
 	return p_buffer;
 #else
-	return buffer.fetch_page(fd, page_num);
+	char * ptr = buffer.fetch_page(fd, page_num);
 	buffer.mark_dirty(fd, page_num);
+	return ptr;
 #endif
 }
 

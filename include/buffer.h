@@ -39,8 +39,12 @@ public:
 	void unpin_page(int fd, int page_num);
 	void mark_dirty(int fd, int page_num);
 
-	void clear(int fd);
+	void flush(int fd);
 	void apply(int fd, int page_num = AllPages);
+
+	void clear();
+
+	void show();
 private:
 
 	void read_page(int slot);

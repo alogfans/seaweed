@@ -9,7 +9,9 @@
 #define __STORAGE_H__
 
 #include "generic.h"
+#ifdef CONFIG_USING_BUFFER
 #include "buffer.h"
+#endif
 
 // HACK FOR TEST
 #define private public

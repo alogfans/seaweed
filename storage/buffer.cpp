@@ -111,9 +111,9 @@ void Buffer::unpin_page(int fd, int page_num)
 
 	buf_table[slot].pin_count--;
 	if (buf_table[slot].pin_count == 0)
-	{
+	{		
 		unlink_slot(slot);
-		insert_free(slot);
+		push_front(slot);
 	}
 }
 
@@ -130,11 +130,25 @@ void Buffer::mark_dirty(int fd, int page_num)
 	push_front(slot);
 }
 
-void Buffer::clear(int fd)
+void Buffer::show()
 {
 	int slot = first;
 	while (slot != InvalidSlot)
 	{
+		int next = buf_table[slot].next;
+		cerr << "slot = " << slot << "\tfd = " << buf_table[slot].fd << 
+			"\tpage num = " << buf_table[slot].page_num << endl;
+		slot = next;
+	}
+	cerr << "--- the end ---\n";
+}
+
+void Buffer::flush(int fd)
+{
+	int slot = first;
+	while (slot != InvalidSlot)
+	{
+		int next = buf_table[slot].next;
 		if (buf_table[slot].fd == fd)
 		{
 			if (buf_table[slot].pin_count != 0)
@@ -144,14 +158,31 @@ void Buffer::clear(int fd)
 			{
 				write_page(slot);
 				buf_table[slot].dirty = false;
-			}			
+			}
 			hash_table.remove(fd, buf_table[slot].page_num);
 			unlink_slot(slot);
 			insert_free(slot);
 		}
-		slot = buf_table[slot].next;
+		slot = next;
 	}
 }
+
+void Buffer::clear()
+{
+	int slot = first;
+	while (slot != InvalidSlot)
+	{
+		int next = buf_table[slot].next;
+		if (buf_table[slot].pin_count == 0)
+		{
+			hash_table.remove(buf_table[slot].fd, buf_table[slot].page_num);
+			unlink_slot(slot);
+			insert_free(slot);
+		}
+		slot = next;
+	}
+}
+
 
 void Buffer::apply(int fd, int page_num)
 {
