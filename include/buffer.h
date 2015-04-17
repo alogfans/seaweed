@@ -45,6 +45,8 @@ public:
 	void clear();
 
 	void show();
+	int get_read_counter();
+	int get_write_counter();
 private:
 
 	void read_page(int slot);
@@ -59,6 +61,9 @@ private:
 	int free_first;
 	BufferSlot buf_table[BufferSlots];
 	HashTable hash_table;
+
+	int read_counter;
+	int write_counter;
 };
 
 

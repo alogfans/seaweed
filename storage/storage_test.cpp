@@ -132,6 +132,8 @@ TEST(storage_test, page_ops_adv)
     }
     storage.close_file();
     storage.destory_file("test.db");
+    cout << storage.buffer.get_read_counter() << endl;
+    cout << storage.buffer.get_write_counter() << endl;
 }
 
 

@@ -31,6 +31,8 @@ Buffer::Buffer() : hash_table(SizeOfHashTable)
 	buf_table[SizeOfHashTable - 1].next = InvalidSlot;
 	first = last = InvalidSlot;
 	free_first = 0;
+
+	read_counter = write_counter = 0;
 }
 
 Buffer::~Buffer()
@@ -211,6 +213,8 @@ void Buffer::read_page(int slot)
 
 	if (read(fd, buf_table[slot].mapping, SizeOfPage) < SizeOfPage)
 		throw logic_error("unable to read file");
+
+	read_counter++;
 }
 
 void Buffer::write_page(int slot)
@@ -223,6 +227,8 @@ void Buffer::write_page(int slot)
 	
 	if (write(fd, buf_table[slot].mapping, SizeOfPage) < SizeOfPage)
 		throw logic_error("unable to write file");
+
+	write_counter++;
 }
 
 void Buffer::unlink_slot(int slot)
@@ -289,4 +295,14 @@ int Buffer::alloc_slot()
     unlink_slot(slot);
     push_front(slot);
     return slot;
+}
+
+int Buffer::get_read_counter()
+{
+	return read_counter;
+}
+
+int Buffer::get_write_counter()
+{
+	return write_counter;
 }

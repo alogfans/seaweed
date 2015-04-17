@@ -105,6 +105,16 @@ void Storage::close_file()
 #ifdef CONFIG_USING_BUFFER
 void Storage::unpin_page(int page_num)
 {
+	if (dirty == true)
+	{
+		lseek(fd, 0, SEEK_SET);
+		if (write(fd, &shadow, SizeOfStorageHeader) < SizeOfStorageHeader)
+			throw logic_error("unable to write file");		
+		if (write(fd, bitmap, SizeOfBitmap) < SizeOfBitmap)
+			throw logic_error("unable to write file");	
+		dirty = false;
+	}
+	
 	if (!is_opening())
 		throw logic_error("file not opened currently");
 	if (page_num < 0 || page_num >= shadow.allot_pages)
@@ -209,6 +219,7 @@ void Storage::update_page_content(int page_num, byte * content)
 			throw logic_error("unable to write file");		
 		if (write(fd, bitmap, SizeOfBitmap) < SizeOfBitmap)
 			throw logic_error("unable to write file");	
+		dirty = false;
 	}
 
 #ifndef CONFIG_USING_BUFFER
