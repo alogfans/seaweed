@@ -88,7 +88,7 @@ bool Storage::is_opening()
 void Storage::close_file()
 {
 #ifdef CONFIG_USING_BUFFER
-	buffer.clear();
+	buffer.flush(fd);
 #endif
 	if (dirty == true)
 	{
@@ -171,8 +171,8 @@ void Storage::release_page(int page_num)
 	clear_slot_property(bitmap[page_num], UsedBit);
 	shadow.used_pages--;
 #ifdef CONFIG_USING_BUFFER
-	buffer.fetch_page(fd, page_num, false);
-	buffer.unpin_page(fd, page_num);
+	//buffer.fetch_page(fd, page_num, false);
+	//buffer.unpin_page(fd, page_num);
 #endif
 }
 
