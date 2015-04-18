@@ -78,6 +78,7 @@ void Storage::open_file(const char * path)
 		throw logic_error("unable to read file");
 	if (read(fd, bitmap, SizeOfBitmap) < SizeOfBitmap)
 		throw logic_error("unable to read file");
+	
 }
 
 bool Storage::is_opening()
@@ -155,6 +156,8 @@ int Storage::acquire_page()
 	}	
 	dirty = true;
 	set_slot_property(bitmap[i], UsedBit);
+	set_slot_property(bitmap[i], ReadBit);
+	set_slot_property(bitmap[i], WriteBit);
 	shadow.used_pages++;
 	return i;
 }

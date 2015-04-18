@@ -79,7 +79,7 @@ TEST(storage_test, page_ops)
     byte *ptr = storage.get_page_content(0);
     strcpy(ptr, "Hello World!");
 
-    storage.update_page_content(n1, ptr);
+    //storage.update_page_content(n1, ptr);
     storage.unpin_page(n1);
     storage.release_page(n2);
     storage.close_file();

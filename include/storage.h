@@ -61,7 +61,7 @@ class Storage
 public:
 	Storage();
 	~Storage();
-
+	
 	static void create_file(const char * path);
 	static void destory_file(const char * path);
 
