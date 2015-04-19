@@ -23,6 +23,12 @@ const char MagicString[] = "Seaweed DB File";
 const uint32_t SizeOfBitmap = 1024;
 typedef byte Slot;
 
+// Supported the following data type
+const uint32_t Unknown = 0;
+const uint32_t Integer = 1;
+const uint32_t Real = 2;	// double
+const uint32_t Char = 3;
+
 // If using buffer componment, set this def.
 // Remove this define will use direct-write technique.
 #define CONFIG_USING_BUFFER
