@@ -56,8 +56,8 @@ public:
 	~Entity();
 
 	void open_entity(byte * buffer);
-	void init_entity(int count_property, EntityProperty * properties);
-	byte * close_entity();
+	void init_entity(int count_property, EntityProperty * properties, byte * buffer);
+	void close_entity();
 
 	void * attain_record(int slot);
 	int insert_record(void * data);

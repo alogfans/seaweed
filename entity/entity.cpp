@@ -23,7 +23,7 @@ Entity::Entity()
 }
 Entity::~Entity()
 {
-	delete [] ptr_buffer;
+	// delete [] ptr_buffer;
 	// do nothing is ok.
 }
 
@@ -32,7 +32,8 @@ void Entity::open_entity(byte * buffer)
 	if (opened == true)
 		throw logic_error("handle open");
 	opened = true;
-	memcpy(ptr_buffer, buffer, SizeOfPage);
+	// memcpy(ptr_buffer, buffer, SizeOfPage);
+	ptr_buffer = buffer;
 
 	// snap important data structure
 	memcpy(&entity_header, ptr_buffer, sizeof(EntityHeader));
@@ -50,12 +51,14 @@ void Entity::open_entity(byte * buffer)
 
 }
 
-void Entity::init_entity(int count_property, EntityProperty * properties)
+void Entity::init_entity(int count_property, EntityProperty * properties, byte * buffer)
 {
 	if (opened == true)
 		throw logic_error("handle open");
 	opened = true;
 
+	ptr_buffer = buffer;
+	
 	ptr_properties = new EntityProperty[count_property];
 	memcpy(ptr_properties, properties, sizeof(EntityProperty) * count_property);
 
@@ -78,18 +81,17 @@ void Entity::init_entity(int count_property, EntityProperty * properties)
 	memcpy(ptr_buffer, &entity_header, sizeof(EntityHeader));
 }
 
-byte * Entity::close_entity()
+void Entity::close_entity()
 {
 	if (opened == false)
 		throw logic_error("handle open");
 	opened = false;
 	
-	byte * output = new byte[SizeOfPage];
+	// byte * output = new byte[SizeOfPage];
 	bitmap->store(ptr_buffer + sizeof(EntityHeader) + 
 		sizeof(EntityProperty) * entity_header.count_property);
-	memcpy(output, ptr_buffer, SizeOfPage);
+	// memcpy(output, ptr_buffer, SizeOfPage);
 	// remember to release!
-	return output;
 }
 
 void * Entity::attain_record(int slot)

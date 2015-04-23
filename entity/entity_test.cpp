@@ -15,9 +15,9 @@ TEST(entity, test1)
     EntityProperty pro;
     pro.type = 1;
     pro.length = 4;
-
+    byte * mem = new byte[4096];
     Entity et;
-    et.init_entity(1, &pro);
+    et.init_entity(1, &pro, mem);
     int data;
     for (int i = 0; i < 989; i++)
     {
@@ -48,9 +48,9 @@ TEST(entity, test2)
     EntityProperty pro;
     pro.type = 1;
     pro.length = 4;
-
+    byte * mem = new byte[4096];
     Entity et;
-    et.init_entity(1, &pro);
+    et.init_entity(1, &pro, mem);
     int data;
     for (int i = 0; i < 989; i ++)
     {
@@ -61,15 +61,16 @@ TEST(entity, test2)
         int *rec = (int *) et.attain_record(loc);
         EXPECT_EQ(*rec, i);
     }
+    et.remove_record(988);
     
-    byte * buffer = et.close_entity();
-    et.open_entity(buffer);
-    for (int i = 0; i < 989; i++)
+    et.close_entity();
+    et.open_entity(mem);
+    for (int i = 0; i < 987; i++)
     {
         int *rec = (int *) et.attain_record(i);
         EXPECT_EQ(*rec, i);
     }    
-
+    ASSERT_THROW(et.attain_record(988), logic_error);
 }
 
 int main(int argc, char *argv[])

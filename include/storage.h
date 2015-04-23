@@ -28,12 +28,13 @@ struct StorageHeader
 	uint32_t used_pages;
 	uint32_t allot_pages;
 	uint32_t bitmap_checksum;
-	char reserved[36];
+	uint32_t root_page;	// first available page, must be B-tree index
+	char reserved[32];
 };
 
 // each bitmap item is 8-bit (1 byte), as the figure below shown
 // *------------------------*-----*-----*-----*-----*
-// *       RESERVED(4)      *  W  *  R  *  U  *  V  *
+// *       PageType 4       *  W  *  R  *  U  *  V  *
 // *------------------------*-----*-----*-----*-----*
 
 const int VaildBit = 0;		// If this page is allot in disk, set 1
@@ -54,6 +55,17 @@ inline void set_slot_property(Slot &slot, int property)
 inline void clear_slot_property(Slot &slot, int property)
 {
 	slot &= ~(0x1 << property);
+}
+
+inline uint32_t get_page_type(Slot slot)
+{
+	return (slot >> 4) & 0xf;
+}
+
+inline void set_page_type(Slot &slot, uint32_t type)
+{
+	slot &= ~(0xf << 4);
+	slot |= (type & 0xf) << 4;
 }
 
 class Storage
