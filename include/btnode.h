@@ -10,6 +10,9 @@
 
 #include "generic.h"
 
+const int InvalidEntry = -1;
+
+
 struct BTNodeMarshall
 {
     bool        is_leaf;

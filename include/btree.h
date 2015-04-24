@@ -19,8 +19,16 @@ const int IndexListEnd = -1;
 
 struct RID
 {
-    uint32_t page_num;
-    uint32_t slot_num;
+    RID(int page_num = Invalid, int slot_num = Invalid) : 
+        page_num(page_num), slot_num(slot_num);
+
+    bool operator==(const RID &rhs) const 
+    {
+        return (page_num == rhs.page_num) && (slot_num == rhs.slot_num);
+    }
+
+    int page_num;
+    int slot_num;
 };
 
 class BTree
@@ -32,7 +40,7 @@ public:
     ~BTree();
     
     RID search(void * key);
-    void insert(void * key, RID loc);
+    void insert(void * key, RID &loc);
     void remove(void * key);
     void destory();
 
@@ -41,6 +49,21 @@ private:
     uint32_t key_sizeof;
     bool opened;
     int root;
+    int next_root;
+
+    int compare(void * lhs, void * rhs);
+    RID find(void * key);
+    BTNode * find_leaf(void * key);
+    void initize_root(void * key, RID &loc);
+    void insert_leaf(BTNode * leaf, void * key, RID &loc);
+    void insert_leaf_spilt(BTNode * leaf, void * key, RID &loc);
+    void insert_into_parent(BTNode * left, BTNode * right, void * key);
+    void insert_into_new_root(BTNode * left, BTNode * right, void * key);
+    void insert_node(BTNode * parent, int left_index, void * key, BTNode * right);
+    void insert_node_split(BTNode * old_node, int left_index, void * key, BTNode * right);
+    int get_child_indexof(BTNode * parent, BTNode * child);
+
+    
 };
 
 

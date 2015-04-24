@@ -31,8 +31,8 @@ void BTNode::create_block(bool is_leaf, uint32_t key_type, uint32_t key_sizeof)
 	this->key_type = key_type;
 	this->key_sizeof = key_sizeof;
 	num_keys = 0;
-	next = -1;
-	parent = -1;
+	next = InvalidEntry;
+	parent = InvalidEntry;
 	order = (SizeOfPage - sizeof(BTNodeMarshall));
 	if (is_leaf == true)
 		order /= key_sizeof + 2 * sizeof(uint32_t);
