@@ -5,75 +5,43 @@
 // 
 // The header file of btree node componment.
 
-#ifndef __BT_NODE_H__
-#define __BT_NODE_H__
+#ifndef __BTREE_H__
+#define __BTREE_H__
 
 #include "generic.h"
+#include "btnode.h"
 
-struct BTNodeMarshall
+// The Btree will maintain a instance of index, remember that
+// the data is provided by entity level, which will be integrated
+// on Table class above it.
+
+const int IndexListEnd = -1;
+
+struct RID
 {
-    bool        is_leaf;
-	uint32_t    key_type;
-	uint32_t    key_sizeof;
-	uint32_t    order;
-    uint32_t    parent;
-    uint32_t    num_keys;
-    uint32_t    next;
-};
-
-class BTNode
-{
-public:
-	BTNode();
-	~BTNode();
-
-    void create_block(bool is_leaf, uint32_t key_type, uint32_t key_sizeof);
-	void marshall_to(byte * buffer);
-	void unmarshall_from(byte * buffer);
-    void dispose();
-
-	void marshall_block(BTNodeMarshall * head_block);
-	void unmarshall_block(BTNodeMarshall * head_block);
-
-    uint32_t    page_num;
-
-	uint32_t    key_type;
-	uint32_t    key_sizeof;
-	uint32_t    order;
-    byte  	 *  keys;				// [Order - 1];
-    uint32_t    parent;
-    bool        is_leaf;
-    uint32_t    num_keys;
-    uint32_t    next;
-    uint32_t *  pointers;			// [Order];
-    uint32_t *  slots;				// [Order], available if it's leaf;
-};
-
-struct Record 
-{
-	Record * next;
-	void * value;
+    uint32_t page_num;
+    uint32_t slot_num;
 };
 
 class BTree
 {
 public:
-    BTree();
+    BTree(int root);                        // if the page existed
+    BTree(int key_type, int key_sizeof);    // if need allot new btree.
+
     ~BTree();
-    Record * find(void * key);
-    void insert(void * key, void * value);
-    //void delete(void * key);
-    void print_tree();
-    void destroy();
+    
+    RID search(void * key);
+    void insert(void * key, RID loc);
+    void remove(void * key);
+    void destory();
+
 private:
-    int root_page;
-    int key_type;
-    int key_sizeof;
+    uint32_t key_type;
+    uint32_t key_sizeof;
+    bool opened;
+    int root;
 };
-
-// relative functions that helps btree routine...
-
-void destroy_record(Record * record);
 
 
 #endif 
