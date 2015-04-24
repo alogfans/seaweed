@@ -346,5 +346,30 @@ int BTree::get_child_indexof(BTNode * parent, BTNode * child)
 
 void BTree::remove(void * key)
 {
+    BTNode * key_leaf = FindLeaf(key);
+    if (key_leaf == NULL)
+        return ;
+    RID found = find(key);
+    if (found == RID())
+        return ;
+    remove_entry(key_leaf, key);
+}
+// very simple: tombstone impl.
+void BTree::remove_entry(BTNode * node, void * key)
+{
+    int left = 0;
 
+    while (compare(node->keys[i], key) != 0)
+        left++;
+
+    for (int i = left + 1; i < node->num_keys; i++)
+        assign(node->keys[i - 1], node->keys[i]);
+
+    for (int i = left + 1; i < node->order - 1; i++)
+    {
+        node->pointers[i - 1] = node->pointers[i]; 
+        node->slots[i - 1] = node->slots[i];      
+    }
+
+    node->num_keys--;
 }
