@@ -43,13 +43,13 @@ public:
 	uint32_t    key_type;
 	uint32_t    key_sizeof;
 	uint32_t    order;
-    byte 	**  keys;				// [Order - 1];
     uint32_t    parent;
     bool        is_leaf;
     uint32_t    num_keys;
     uint32_t    next;
+    
     uint32_t *  pointers;			// [Order];
-    uint32_t *  slots;				// [Order], available if it's leaf;
+    byte    **  keys;               // [Order - 1];
 };
 
 #endif 

@@ -10,8 +10,8 @@ CXXFLAGS := -g -Wall -Werror -Wextra
 INCLUDE := ../include
 LIBS := ../lib
 
-EXEC := btnode_test
-DEPS := btnode.cpp
+EXEC := btree_test
+DEPS := btree.cpp btnode.cpp
 
 
 $(EXEC):

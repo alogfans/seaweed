@@ -10,6 +10,7 @@
 
 // DO NOT INCLUDE ANY OTHER FILES!
 typedef unsigned int uint32_t;
+typedef unsigned int uint64_t;
 typedef char byte;
 
 #ifndef NULL

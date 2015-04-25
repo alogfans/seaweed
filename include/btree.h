@@ -15,12 +15,15 @@
 // the data is provided by entity level, which will be integrated
 // on Table class above it.
 
-const int IndexListEnd = -1;
+// const int InvalidEntry = -1;
 
 struct RID
 {
-    RID(int page_num = Invalid, int slot_num = Invalid) : 
-        page_num(page_num), slot_num(slot_num);
+    RID(int page_num = InvalidEntry, int slot_num = InvalidEntry) : 
+        page_num(page_num), slot_num(slot_num)
+    {
+
+    }
 
     bool operator==(const RID &rhs) const 
     {
@@ -37,23 +40,28 @@ public:
     BTree(int root);                        // if the page existed
     BTree(int key_type, int key_sizeof);    // if need allot new btree.
 
-    ~BTree();
+    // ~BTree();
     
     RID search(void * key);
     void insert(void * key, RID &loc);
     void remove(void * key);
-    void destory();
+    // void destory();
+
+    BTNode * load_page(int page_num);
+    void close_page(BTNode * node);
+    int lease_page();
 
 private:
+
     uint32_t key_type;
     uint32_t key_sizeof;
-    bool opened;
     int root;
     int next_root;
 
+    void assign(void * lhs, void * rhs);
     int compare(void * lhs, void * rhs);
-    RID find(void * key);
-    BTNode * find_leaf(void * key);
+
+    BTNode * search_leaf(void * key);
     void initize_root(void * key, RID &loc);
     void insert_leaf(BTNode * leaf, void * key, RID &loc);
     void insert_leaf_spilt(BTNode * leaf, void * key, RID &loc);
@@ -62,8 +70,8 @@ private:
     void insert_node(BTNode * parent, int left_index, void * key, BTNode * right);
     void insert_node_split(BTNode * old_node, int left_index, void * key, BTNode * right);
     int get_child_indexof(BTNode * parent, BTNode * child);
-
     
+    void remove_entry(BTNode * node, void * key);
 };
 
 

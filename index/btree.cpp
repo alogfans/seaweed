@@ -12,6 +12,37 @@
 #include <stdexcept>
 using namespace std;
 
+BTree::BTree(int root) : root(root)
+{
+    BTNode * node = load_page(root);
+    key_type = node->key_type;
+    key_sizeof = node->key_sizeof;
+    next_root = node->next;
+    close_page(node);
+}
+
+BTree::BTree(int key_type, int key_sizeof) : key_type(key_type), key_sizeof(key_sizeof), 
+    root(InvalidEntry), next_root(InvalidEntry)
+{
+
+}
+
+void BTree::assign(void * lhs, void * rhs)
+{
+    switch (key_type)
+    {
+    case IntegerType:
+        * ((int *) lhs) = * ((int *) rhs);
+        break;
+    case RealType:
+        * ((float *) lhs) = * ((float *) rhs);
+        break;
+    case CharType:
+        strncpy((char *) lhs, (char *) rhs, key_sizeof);
+        break;
+    }
+}
+
 int BTree::compare(void * lhs, void * rhs)
 {
     switch (key_type)
@@ -34,11 +65,11 @@ int BTree::compare(void * lhs, void * rhs)
     return -2;
 }
 
-RID BTree::find(void * key)
+RID BTree::search(void * key)
 {
 	if (root < 0)
-		return NULL;
-	BTNode * leaf = find_leaf(key);
+		return RID();
+	BTNode * leaf = search_leaf(key);
 
 	int slot;
 	for (slot = 0; slot < leaf->num_keys; slot++)
@@ -49,23 +80,24 @@ RID BTree::find(void * key)
 		return RID();
     
     RID result;
-    result.page_num = leaf.pointers[slot];
-    result.slot_num = leaf.slots[slot];
+    result.page_num = (leaf->pointers[slot] >> 16) & 0xffff;
+    result.slot_num = leaf->pointers[slot] & 0xffff;
 
     close_page(leaf);
     return result;
 }
 
-BTNode * BTree::find_leaf(void * key)
+BTNode * BTree::search_leaf(void * key)
 {
     BTNode * node = load_page(root);
     int next;
     while (node->is_leaf == false)
     {
-        int slot;
+        int slot = 0;
         while (slot < node->num_keys && compare(key, node->keys[slot]) >= 0)
             slot++;
         next = node->pointers[slot];
+        // cerr << node->num_keys << " " << slot << " " << next << endl;
         close_page(node);
         node = load_page(next);
     }
@@ -74,14 +106,17 @@ BTNode * BTree::find_leaf(void * key)
 
 void BTree::insert(void * key, RID &loc)
 {
-	if (find(key) != RID())
+	if (search(key).page_num != InvalidEntry)
 		return ;
+    //if (*(int *) key >= 506)
+    //    cout << "Aha ###" << *(int *) key << " root=" << root << endl;
 
 	if (root < 0)
 		initize_root(key, loc);
 	else
 	{
-		BTNode * leaf = find_leaf(key);
+		BTNode * leaf = search_leaf(key);
+        // cout << *(int *) key << " " << leaf->page_num << endl;
 		if (leaf->num_keys < leaf->order - 1)
 			insert_leaf(leaf, key, loc);
 		else
@@ -93,21 +128,23 @@ void BTree::insert(void * key, RID &loc)
 void BTree::initize_root(void * key, RID &loc)
 {
     // request for a valid page for storage layer
-    BTNode node;
+    BTNode * node = new BTNode();
     int page_num = lease_page();
-    node.page_num = page_num;
-    node.create_block(true, key_type, key_sizeof);
-    assign(node.keys[0], key);
-    node.pointers[0] = loc.page_num;
-    node.slots[0] = loc.slot_num;
+    node->page_num = page_num;
+    node->create_block(true, key_type, key_sizeof);
 
-    node.num_keys++;
-    close_page(&node);
+    assign(node->keys[0], key);
+    node->pointers[0] = ((loc.page_num << 16) + loc.slot_num);
+    // cout << node->pointers[0] << endl;
+    node->num_keys++;
+    close_page(node);
     root = page_num;
+    
 }
 
 void BTree::insert_leaf(BTNode * leaf, void * key, RID &loc)
 {
+    // cout << "goes here" << endl;
     int insert_point = 0;
     while (insert_point < leaf->num_keys && compare(leaf->keys[insert_point], key) < 0)
         insert_point++;
@@ -116,13 +153,11 @@ void BTree::insert_leaf(BTNode * leaf, void * key, RID &loc)
     {
         assign(leaf->keys[i], leaf->keys[i - 1]);
         leaf->pointers[i] = leaf->pointers[i - 1];
-        leaf->slots[i] = leaf->slots[i - 1];
     }
 
     assign(leaf->keys[insert_point], key);
 
-    leaf->pointers[insert_point] = loc.page_num;
-    leaf->slots[insert_point] = loc.slot_num;
+    leaf->pointers[insert_point] = ((loc.page_num << 16) + loc.slot_num);
     leaf->num_keys++;
 }
 
@@ -130,23 +165,22 @@ void BTree::insert_leaf_spilt(BTNode * leaf, void * key, RID &loc)
 {
 	// this function attains a previous root page and spilt the leaf with two. Remember
 	// that the root may be modified too!
+    // cout << "here key=" << *(int *) key << endl;
     BTNode * new_leaf = new BTNode();
     int page_num = lease_page();
     new_leaf->page_num = page_num;
 
 	new_leaf->create_block(true, key_type, key_sizeof);
-
 	byte * new_key = new byte[key_sizeof];
     // byte * temp_keys = new byte[leaf->order * key_sizeof];
-    byte ** temp_keys = new (byte *)[leaf->order];
+    byte ** temp_keys = new byte *[leaf->order];
     for (int i = 0; i < leaf->order; i++)
         temp_keys[i] = new byte[key_sizeof];
 
-    int * temp_pointers = new int[leaf->order];
-    int * temp_slots = new int[leaf->order];
+    int32_t * temp_pointers = new int32_t[leaf->order];
 
     int insert_point = 0;
-    while (insert_point < leaf->num_keys && compare(leaf[insert_point], key) < 0)
+    while (insert_point < leaf->num_keys && compare(leaf->keys[insert_point], key) < 0)
         insert_point++;
 
     int i, j;                   // j is used to skip the insert_point element.
@@ -156,21 +190,18 @@ void BTree::insert_leaf_spilt(BTNode * leaf, void * key, RID &loc)
             j++;
         assign(temp_keys[j], leaf->keys[i]);
         temp_pointers[j] = leaf->pointers[i];
-        temp_slots[j] = leaf->slots[i];
     }
 
     assign(temp_keys[insert_point], key);
-    temp_pointers[insert_point] = pointer;
-    temp_slots[insert_point] = slot;
+    temp_pointers[insert_point] = ((loc.page_num << 16) + loc.slot_num);
 
     leaf->num_keys = 0;
 
     int split = (leaf->order + 1) / 2;
-
+//cout << *(int *) temp_keys[split] << "  " << temp_pointers[split] << endl;
     for (i = 0; i < split; i++) 
     {
         leaf->pointers[i] = temp_pointers[i];
-        leaf->slots[i] = temp_slots[i];
         assign(leaf->keys[i], temp_keys[i]);
         leaf->num_keys++;
     }
@@ -178,50 +209,46 @@ void BTree::insert_leaf_spilt(BTNode * leaf, void * key, RID &loc)
     for (i = split, j = 0; i < leaf->order; i++, j++) 
     {
         new_leaf->pointers[j] = temp_pointers[i];
-        new_leaf->slots[j] = temp_slots[i];
-        assign(leaf->keys[j], temp_keys[i]);
+        assign(new_leaf->keys[j], temp_keys[i]);
         new_leaf->num_keys++;
     }
+//cout << *(int *) new_leaf->keys[0] << "  " << new_leaf->pointers[0] << endl;
 
     // note: temp_ is no longer used.
     delete [] temp_pointers;
-    delete [] temp_slots;
     for (int i = 0; i < leaf->order; i++)
         delete [] temp_keys[i];
     delete [] temp_keys;
     
     new_leaf->pointers[leaf->order - 1] = leaf->pointers[leaf->order - 1];
-    leaf->pointers[leaf->order - 1] = new_leaf;
+    leaf->pointers[leaf->order - 1] = new_leaf->page_num;
 
     // clear null point. is not neccessary.
     for (i = leaf->num_keys; i < leaf->order - 1; i++)
     {
-    	leaf->pointers[i] = Invalid;
-    	leaf->slots[i] = Invalid;
+    	leaf->pointers[i] = InvalidEntry;
     }
         
     for (i = new_leaf->num_keys; i < leaf->order - 1; i++)
     {
-    	new_leaf->pointers[i] = Invalid;
-    	new_leaf->slots[i] = Invalid;
+    	new_leaf->pointers[i] = InvalidEntry;
     }
 
     new_leaf->parent = leaf->parent;
     assign(new_key, new_leaf->keys[0]);
-
+    // cout << new_leaf->num_keys << " " << *(int *) new_leaf->keys[0] << endl;
     insert_into_parent(leaf, new_leaf, new_key);
-
     delete [] new_key;
     close_page(new_leaf);
 }
 
 void BTree::insert_into_parent(BTNode * left, BTNode * right, void * key)
-{
-    if (left->parent == NULL)
+{    
+    if (left->parent == InvalidEntry)
         insert_into_new_root(left, right, key);
     else
-    {
-        BTNode * parent = load_page(left->parent)
+    {        
+        BTNode * parent = load_page(left->parent);
         int left_index = get_child_indexof(parent, left);
 
         if (parent->num_keys < parent->order - 1)
@@ -235,19 +262,21 @@ void BTree::insert_into_parent(BTNode * left, BTNode * right, void * key)
 
 void BTree::insert_into_new_root(BTNode * left, BTNode * right, void * key)
 {
+    // cerr << "fuck" << left->page_num << right->page_num << endl;
     // request for a valid page for storage layer
-    BTNode node;
+    BTNode * node = new BTNode();
     root = lease_page();
-    node.page_num = root;
-    node.create_block(false, key_type, key_sizeof);
-    node.keys[0] = key;
-    node.pointers[0] = left;
-    node.pointers[1] = right;
-    node.next = next_root;
-    node.num_keys++;
+    node->page_num = root;
+    node->create_block(false, key_type, key_sizeof);
+    assign(node->keys[0], key);
+    node->pointers[0] = left->page_num;
+    node->pointers[1] = right->page_num;
+
+    node->next = next_root;
+    node->num_keys++;
     left->parent = root;
     right->parent = root;
-    close_page(&node);
+    close_page(node);
 }
 
 void BTree::insert_node(BTNode * parent, int left_index, void * key, BTNode * right)
@@ -258,7 +287,7 @@ void BTree::insert_node(BTNode * parent, int left_index, void * key, BTNode * ri
         assign(parent->keys[i], parent->keys[i - 1]);
     }
 
-    parent->pointers[left_index + 1] = right;
+    parent->pointers[left_index + 1] = right->page_num;
     assign(parent->keys[left_index], key);
     parent->num_keys++;
 }
@@ -271,7 +300,7 @@ void BTree::insert_node_split(BTNode * old_node, int left_index, void * key, BTN
 
     int i, j;
 
-    byte ** temp_keys = new (byte *)[old_node->order];
+    byte ** temp_keys = new byte *[old_node->order];
     for (int i = 0; i < old_node->order; i++)
         temp_keys[i] = new byte[key_sizeof];
 
@@ -292,7 +321,7 @@ void BTree::insert_node_split(BTNode * old_node, int left_index, void * key, BTN
     }
 
     temp_pointers[left_index + 1] = right->page_num;
-    temp_keys[left_index] = key;
+    assign(temp_keys[left_index], key);
     
     int split = (old_node->order + 1) / 2;
     old_node->num_keys = 0;
@@ -309,7 +338,7 @@ void BTree::insert_node_split(BTNode * old_node, int left_index, void * key, BTN
     byte * new_key = new byte[key_sizeof];
     assign(new_key, temp_keys[split - 1]);
 
-    for (++i, j = 0; i < Order; i++, j++) 
+    for (++i, j = 0; i < new_node->order; i++, j++) 
     {
         new_node->pointers[j] = temp_pointers[i];
         assign(new_node->keys[j], temp_keys[i]);
@@ -320,7 +349,7 @@ void BTree::insert_node_split(BTNode * old_node, int left_index, void * key, BTN
     new_node->parent = old_node->parent;
 
     delete [] temp_pointers;
-    for (int i = 0; i < leaf->order; i++)
+    for (int i = 0; i < old_node->order; i++)
         delete [] temp_keys[i];
     delete [] temp_keys;
 
@@ -331,7 +360,7 @@ void BTree::insert_node_split(BTNode * old_node, int left_index, void * key, BTN
         close_page(child);
     }
 
-    insert_into_parent(old_node, new_node, k_prime);
+    insert_into_parent(old_node, new_node, new_key);
     close_page(new_node);
 }
 
@@ -339,17 +368,18 @@ void BTree::insert_node_split(BTNode * old_node, int left_index, void * key, BTN
 int BTree::get_child_indexof(BTNode * parent, BTNode * child)
 {
     int left_index = 0;
-    while (left_index <= parent->num_keys && parent->pointers[left_index] != child.page_num)
+    while (left_index <= parent->num_keys && parent->pointers[left_index] != child->page_num)
         left_index++;
+    // cout << "idx=" << left_index << endl;
     return left_index;
 }
 
 void BTree::remove(void * key)
 {
-    BTNode * key_leaf = FindLeaf(key);
+    BTNode * key_leaf = search_leaf(key);
     if (key_leaf == NULL)
         return ;
-    RID found = find(key);
+    RID found = search(key);
     if (found == RID())
         return ;
     remove_entry(key_leaf, key);
@@ -359,7 +389,7 @@ void BTree::remove_entry(BTNode * node, void * key)
 {
     int left = 0;
 
-    while (compare(node->keys[i], key) != 0)
+    while (compare(node->keys[left], key) != 0)
         left++;
 
     for (int i = left + 1; i < node->num_keys; i++)
@@ -368,7 +398,6 @@ void BTree::remove_entry(BTNode * node, void * key)
     for (int i = left + 1; i < node->order - 1; i++)
     {
         node->pointers[i - 1] = node->pointers[i]; 
-        node->slots[i - 1] = node->slots[i];      
     }
 
     node->num_keys--;
