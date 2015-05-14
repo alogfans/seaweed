@@ -64,6 +64,7 @@ void Entity::init_entity(int count_property, EntityProperty * properties, byte *
 
 	entity_header.count_property = count_property;	
 	entity_header.record_bytes = 0;
+	entity_header.next_entity = -1;
 
 	for (int i = 0; i < count_property; i++)
 		entity_header.record_bytes += properties[i].length;
@@ -87,6 +88,7 @@ void Entity::close_entity()
 		throw logic_error("handle open");
 	opened = false;
 	
+	memcpy(ptr_buffer, &entity_header, sizeof(entity_header));
 	// byte * output = new byte[SizeOfPage];
 	bitmap->store(ptr_buffer + sizeof(EntityHeader) + 
 		sizeof(EntityProperty) * entity_header.count_property);
@@ -113,7 +115,7 @@ int Entity::insert_record(void * data)
 		if (bitmap->test(slot) == false)
 			break;
 	if (slot == max_records)
-		throw logic_error("slot full");
+		return -1;
 
 	int loc = entity_header.record_ptr + entity_header.record_bytes * slot;
 	memcpy(ptr_buffer + loc, data, entity_header.record_bytes);
@@ -138,4 +140,23 @@ void Entity::replace_record(int slot, void * data)
 		throw logic_error("invalid slot");
 	int loc = entity_header.record_ptr + entity_header.record_bytes * slot;
 	memcpy(ptr_buffer + loc, data, entity_header.record_bytes);
+}
+
+void Entity::set_next_entity(int page_num)
+{
+	if (opened == false)
+		throw logic_error("handle open");
+	entity_header.next_entity = page_num;
+}
+
+int Entity::get_next_entity()
+{
+	if (opened == false)
+		throw logic_error("handle open");
+	return entity_header.next_entity;
+}
+
+void Entity::clear_bitmap()
+{
+	bitmap->clear();
 }

@@ -10,8 +10,8 @@ CXXFLAGS := -g -Wall -Werror -Wextra
 INCLUDE := ../include
 LIBS := ../lib
 
-EXEC := entity_test
-DEPS := entity.cpp entity_bitmap.cpp
+EXEC := record_test
+DEPS := record.cpp entity.cpp entity_bitmap.cpp ../storage/storage.cpp ../storage/hashtable.cpp ../storage/buffer.cpp 
 
 
 $(EXEC):

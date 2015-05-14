@@ -13,6 +13,7 @@
 
 struct EntityHeader
 {
+	int next_entity;
 	uint32_t record_bytes;
 	uint32_t record_ptr;
 	uint32_t count_property;
@@ -58,6 +59,11 @@ public:
 	void open_entity(byte * buffer);
 	void init_entity(int count_property, EntityProperty * properties, byte * buffer);
 	void close_entity();
+
+	void set_next_entity(int page_num);
+	int get_next_entity();
+
+	void clear_bitmap();
 
 	void * attain_record(int slot);
 	int insert_record(void * data);
