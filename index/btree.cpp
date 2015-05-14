@@ -12,17 +12,16 @@
 #include <stdexcept>
 using namespace std;
 
-BTree::BTree(int root) : root(root)
+BTree::BTree(Storage &stor, int root) : root(root), stor(stor)
 {
     BTNode * node = load_page(root);
     key_type = node->key_type;
     key_sizeof = node->key_sizeof;
-    next_root = node->next;
     close_page(node);
 }
 
-BTree::BTree(int key_type, int key_sizeof) : key_type(key_type), key_sizeof(key_sizeof), 
-    root(InvalidEntry), next_root(InvalidEntry)
+BTree::BTree(Storage &stor, int key_type, int key_sizeof) : key_type(key_type), key_sizeof(key_sizeof), 
+    root(InvalidEntry), stor(stor)
 {
 
 }
@@ -272,7 +271,6 @@ void BTree::insert_into_new_root(BTNode * left, BTNode * right, void * key)
     node->pointers[0] = left->page_num;
     node->pointers[1] = right->page_num;
 
-    node->next = next_root;
     node->num_keys++;
     left->parent = root;
     right->parent = root;
@@ -401,4 +399,38 @@ void BTree::remove_entry(BTNode * node, void * key)
     }
 
     node->num_keys--;
+}
+
+
+BTNode * BTree::load_page(int page_num)
+{
+    BTNode * node = new BTNode();
+    byte * buffer = stor.get_page_content(page_num);
+    node->unmarshall_from(buffer);
+    stor.unpin_page(page_num);
+    node->page_num = page_num;
+    return node;
+}
+
+void BTree::close_page(BTNode * node)
+{
+    if (node != NULL)
+    {
+        int page_num = node->page_num;
+        byte * buffer = stor.get_page_content(page_num);
+        node->marshall_to(buffer);
+        stor.update_page_content(page_num, buffer);
+        stor.unpin_page(page_num);
+        delete node;
+    }
+}
+
+int BTree::lease_page()
+{
+    return stor.acquire_page();
+}
+
+int BTree::get_root()
+{
+    return root;
 }

@@ -10,6 +10,7 @@
 
 #include "generic.h"
 #include "btnode.h"
+#include "storage.h"
 
 // The Btree will maintain a instance of index, remember that
 // the data is provided by entity level, which will be integrated
@@ -37,8 +38,8 @@ struct RID
 class BTree
 {
 public:
-    BTree(int root);                        // if the page existed
-    BTree(int key_type, int key_sizeof);    // if need allot new btree.
+    BTree(Storage &stor, int root);                        // if the page existed
+    BTree(Storage &stor, int key_type, int key_sizeof);    // if need allot new btree.
 
     // ~BTree();
     
@@ -51,12 +52,13 @@ public:
     void close_page(BTNode * node);
     int lease_page();
 
-private:
+    int get_root();
 
+private:
+    Storage &stor;
     uint32_t key_type;
     uint32_t key_sizeof;
     int root;
-    int next_root;
 
     void assign(void * lhs, void * rhs);
     int compare(void * lhs, void * rhs);

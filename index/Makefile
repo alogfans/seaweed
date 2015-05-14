@@ -11,7 +11,8 @@ INCLUDE := ../include
 LIBS := ../lib
 
 EXEC := btree_test
-DEPS := btree.cpp btnode.cpp
+DEPS := btree.cpp btnode.cpp ../storage/storage.cpp ../storage/hashtable.cpp ../storage/buffer.cpp 
+
 
 
 $(EXEC):
