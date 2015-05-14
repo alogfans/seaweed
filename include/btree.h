@@ -46,7 +46,7 @@ public:
     RID search(void * key);
     void insert(void * key, RID &loc);
     void remove(void * key);
-    // void destory();
+    void destroy(int page_num = -1);
 
     BTNode * load_page(int page_num);
     void close_page(BTNode * node);

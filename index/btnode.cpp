@@ -30,6 +30,7 @@ void BTNode::create_block(bool is_leaf, uint32_t key_type, uint32_t key_sizeof)
 	this->key_sizeof = key_sizeof;
 	num_keys = 0;
 	next = InvalidEntry;
+	prev = InvalidEntry;
 	parent = InvalidEntry;
 	order = SizeOfPage - sizeof(BTNodeMarshall);
 	order /= key_sizeof + sizeof(uint32_t);
@@ -53,6 +54,7 @@ void BTNode::marshall_to(byte * buffer)
     head_block.is_leaf = is_leaf;
     head_block.num_keys = num_keys;
     head_block.next = next;
+    head_block.prev = prev;
 
 	uint32_t offset_keys = sizeof(BTNodeMarshall);
 	uint32_t offset_pointers = offset_keys + key_sizeof * (order - 1);
@@ -79,6 +81,7 @@ void BTNode::unmarshall_from(byte * buffer)
     is_leaf = head_block.is_leaf;
     num_keys = head_block.num_keys;
     next = head_block.next;
+    prev = head_block.prev;
 
 	if (keys || pointers)
 		throw logic_error("unmarshall: storage not closed");

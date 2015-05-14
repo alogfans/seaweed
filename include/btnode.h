@@ -21,7 +21,7 @@ struct BTNodeMarshall
 	uint32_t    order;
     uint32_t    parent;
     uint32_t    num_keys;
-    uint32_t    next;       // used only by root, point to next index
+    uint32_t    prev, next;       // used only by root, point to next index
 };
 
 class BTNode
@@ -46,7 +46,7 @@ public:
     uint32_t    parent;
     bool        is_leaf;
     uint32_t    num_keys;
-    uint32_t    next;
+    uint32_t    prev, next;
     
     uint32_t *  pointers;			// [Order];
     byte    **  keys;               // [Order - 1];

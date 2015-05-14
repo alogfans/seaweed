@@ -31,7 +31,8 @@ TEST(btree, test3)
         RID rid = btree->search(&i);
         EXPECT_EQ(rid.page_num, 1);
         EXPECT_EQ(rid.slot_num, 10000 - i);
-    }    
+    } 
+    btree->destroy();
     delete btree;
 }
 

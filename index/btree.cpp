@@ -138,7 +138,7 @@ void BTree::initize_root(void * key, RID &loc)
     node->num_keys++;
     close_page(node);
     root = page_num;
-    
+        
 }
 
 void BTree::insert_leaf(BTNode * leaf, void * key, RID &loc)
@@ -434,3 +434,22 @@ int BTree::get_root()
 {
     return root;
 }
+
+void BTree::destroy(int page_num)
+{
+    if (page_num == -1)
+        page_num = root;
+
+    if (page_num == InvalidEntry)
+        throw logic_error("root invalid");
+
+    BTNode * node = load_page(page_num);
+    if (!node->is_leaf)
+    {
+        for (int i = 0; i < node->num_keys; i++)
+            destroy(node->pointers[i]);
+    }
+    close_page(node);
+    stor.release_page(page_num);
+}
+
