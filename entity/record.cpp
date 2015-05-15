@@ -13,7 +13,7 @@
 
 using namespace std;
 
-Record::Record(Storage &stor, int page_num): stor(stor), first_page_num(first_page_num)
+Record::Record(Storage &stor, int page_num): stor(stor), first_page_num(page_num)
 {
 
 }
@@ -32,6 +32,26 @@ void * Record::attain_record(RID &loc)
 	entity.close_entity();
 	stor.unpin_page(loc.page_num);
 	return callback;
+}
+
+void Record::destroy()
+{
+	destroy_recursive(first_page_num);
+}
+
+void Record::destroy_recursive(int page_num)
+{
+	if (page_num < 0)
+		return;
+//cout << "Attempting: " << page_num << endl;
+	Entity entity;
+	byte * buffer = stor.get_page_content(page_num);
+	entity.open_entity(buffer);
+	int next = entity.get_next_entity();
+	destroy_recursive(next);
+	entity.close_entity();
+	stor.unpin_page(page_num);
+	stor.release_page(page_num);
 }
 
 RID Record::insert_record(void * data)

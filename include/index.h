@@ -10,42 +10,35 @@
 
 #include "generic.h"
 #include "storage.h"
-#include "entity.h"
+#include "record.h"
 #include "btree.h"
-
-struct Record
-{
-	Record * next;
-	int row;
-	void * data;
-};
-
-void delete_record_structure(Record * record);
+#include <vector>
 
 class Index
 {
 public:
 	Index(Storage &stor);
-	~Index();
+	//~Index();
 
-    void create_table(int n_property, Property * properties, int key_id);
-    void create_index(int table_id, int key_id);
+    int create_table(int n_property, EntityProperty * properties);
+    int create_index(int table_id, int key_type, int key_sizeof);
     void drop_table(int table_id);
-    void drop_index(int table_id, int index_id);
+    void drop_index(int index_id);
 
-    void open_table(int table_id);
-    void close_table(int table_id);
 
-    int count();
-    void insert_record(void * data);
-    void delete_record(int key_id, void * key);
-    Record * select_record(int operand, int key_id, void * key);
-    void modify_record(Records * record, void * data);
+    void open_table(int table_id, int index_id);
+    void close_table(int &table_id, int &index_id);
+
+    void insert_record(void * data, void * key);
+    void delete_record(void * key);
+    std::vector<void *> select_record(int operand, void * key);
 
 private:
 	Storage &stor;
-	Entity entity;
-	BTree * btree;
+
+    bool opened;
+    Record * op_record;
+    BTree * op_btree;
 };
 
 #endif

@@ -10,8 +10,8 @@ CXXFLAGS := -g -Wall -Werror -Wextra
 INCLUDE := ../include
 LIBS := ../lib
 
-EXEC := btree_test
-DEPS := btree.cpp btnode.cpp ../storage/storage.cpp ../storage/hashtable.cpp ../storage/buffer.cpp 
+EXEC := index_test
+DEPS := index.cpp btree.cpp btnode.cpp ../storage/storage.cpp ../storage/hashtable.cpp ../storage/buffer.cpp ../entity/entity.cpp ../entity/entity_bitmap.cpp ../entity/record.cpp
 
 
 
@@ -21,4 +21,4 @@ $(EXEC):
 	$(RM) $(EXEC)
 
 clean:
-	$(RM) *.o $(EXEC)
+	$(RM) *.o $(EXEC) *.db

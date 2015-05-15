@@ -9,6 +9,7 @@
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
+#include <vector>
 #include <stdexcept>
 using namespace std;
 
@@ -453,3 +454,55 @@ void BTree::destroy(int page_num)
     stor.release_page(page_num);
 }
 
+
+int BTree::allocate_root()
+{
+    // request for a valid page for storage layer
+    BTNode * node = new BTNode();
+    int page_num = lease_page();
+    node->page_num = page_num;
+    node->create_block(true, key_type, key_sizeof);
+    close_page(node);
+    root = page_num;
+    return page_num;
+}
+
+vector<RID> BTree::selects(int operand, void * key)
+{
+    vector<RID> rid_list;
+
+    if (operand == OP_NA)
+        return rid_list;
+
+    if (root < 0)
+        return rid_list;
+
+    BTNode * leaf = search_leaf(key);
+
+    int slot;
+    for (slot = 0; slot < leaf->num_keys; slot++)
+        if (compare(leaf->keys[slot], key) == 0)
+            break;
+
+    if ((operand == OP_EQ || operand == OP_LE || operand == OP_GE) && 
+        slot == leaf->num_keys)
+    {
+        RID result;
+        result.page_num = (leaf->pointers[slot] >> 16) & 0xffff;
+        result.slot_num = leaf->pointers[slot] & 0xffff;
+        rid_list.push_back(result);
+    }
+
+    if (operand == OP_LT || operand == OP_LE || operand == OP_NE)
+    {
+
+    }
+
+    if (operand == OP_GT || operand == OP_GE || operand == OP_NE)
+    {
+
+    }
+
+    close_page(leaf);
+    return rid_list;
+}

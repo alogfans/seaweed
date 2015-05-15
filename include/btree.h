@@ -11,6 +11,7 @@
 #include "generic.h"
 #include "btnode.h"
 #include "storage.h"
+#include <vector>
 
 // The Btree will maintain a instance of index, remember that
 // the data is provided by entity level, which will be integrated
@@ -53,6 +54,9 @@ public:
     int lease_page();
 
     int get_root();
+    int allocate_root();
+
+    std::vector<RID> selects(int operand, void * key);
 
 private:
     Storage &stor;
