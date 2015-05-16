@@ -89,7 +89,7 @@ vector<void *> Index::select_record(int operand, void * key)
 
 	vector<RID> rids = op_btree->selects(operand, key);
 	vector<void *> record_vector;
-
+//cout << rids[0].page_num << endl;
 	for (int i = 0; i < rids.size(); i++)
 		record_vector.push_back(op_record->attain_record(rids[i]));
 	return record_vector;

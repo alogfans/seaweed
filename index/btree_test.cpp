@@ -9,6 +9,7 @@
 #include "storage.h"
 #include "gtest/gtest.h"
 #include <stdexcept>
+#include <vector>
 #include <cstring>
 #include <iostream>
 using namespace std;
@@ -33,6 +34,10 @@ TEST(btree, test3)
         EXPECT_EQ(rid.slot_num, 10000 - i);
     } 
     btree->destroy();
+    int k = 3980;
+    vector<RID> rid_list = btree->selects(OP_GE, &k);
+    for (int i = 0; i < rid_list.size(); i++)
+        cout << rid_list[i].page_num << "  " << rid_list[i].slot_num << endl;
     delete btree;
 }
 

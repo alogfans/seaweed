@@ -42,6 +42,8 @@ void BTNode::create_block(bool is_leaf, uint32_t key_type, uint32_t key_sizeof)
 	for (int i = 0; i < order - 1; i++)
 		keys[i] = new byte [key_sizeof];
 	pointers = new uint32_t[order];
+	if (is_leaf)
+		pointers[order - 1] = InvalidEntry;
 }
 
 void BTNode::marshall_to(byte * buffer)

@@ -55,6 +55,7 @@ public:
 
     int get_root();
     int allocate_root();
+    
 
     std::vector<RID> selects(int operand, void * key);
 
@@ -78,6 +79,8 @@ private:
     int get_child_indexof(BTNode * parent, BTNode * child);
     
     void remove_entry(BTNode * node, void * key);
+
+    BTNode * get_left_most();
 };
 
 

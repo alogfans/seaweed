@@ -37,12 +37,18 @@ TEST(index, test3)
     EXPECT_EQ(btree, 1);
 
     idx.open_table(table, btree);
-    for (int i = 1; i < 4000; i++)
+    for (int i = 1; i < 40; i++)
     	idx.insert_record(&i, &i);
-    for (int i = 1; i < 4000; i++)
-    	idx.delete_record(&i);    
-    idx.close_table(table, btree);
+    //for (int i = 1; i < 40; i++)
+    //	idx.delete_record(&i);    
 
+
+    int kk = 270;
+    vector<void *> rid_list = idx.select_record(OP_LE, &kk);
+    for (int i = 0; i < rid_list.size(); i++)
+        cout << *(int *) rid_list[i] << " ";
+    cout << "\n";
+    idx.close_table(table, btree);
     idx.drop_table(table);
     idx.drop_index(btree);
 }

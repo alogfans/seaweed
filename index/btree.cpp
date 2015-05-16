@@ -78,7 +78,7 @@ RID BTree::search(void * key)
 
 	if (slot == leaf->num_keys)
 		return RID();
-    
+   
     RID result;
     result.page_num = (leaf->pointers[slot] >> 16) & 0xffff;
     result.slot_num = leaf->pointers[slot] & 0xffff;
@@ -382,8 +382,9 @@ void BTree::remove(void * key)
     if (found == RID())
         return ;
     remove_entry(key_leaf, key);
+    close_page(key_leaf);   
 }
-// very simple: tombstone impl.
+
 void BTree::remove_entry(BTNode * node, void * key)
 {
     int left = 0;
@@ -469,13 +470,48 @@ int BTree::allocate_root()
 
 vector<RID> BTree::selects(int operand, void * key)
 {
+    //cout << *(int *) key << endl;
     vector<RID> rid_list;
+    // rid_list.push_back(search(key));
+    // return rid_list;
 
     if (operand == OP_NA)
         return rid_list;
 
     if (root < 0)
         return rid_list;
+
+    if (operand == OP_LT || operand == OP_LE || operand == OP_NE)
+    {
+//cout << "ok";
+        BTNode * current = get_left_most();
+
+        while (1)
+        {
+            int i;
+            for (i = 0; i < current->num_keys && compare(current->keys[i], key) < 0; i++)
+            {
+                RID result;
+                result.page_num = (current->pointers[i] >> 16) & 0xffff;
+                result.slot_num = current->pointers[i] & 0xffff;
+//cout << "insert";
+                rid_list.push_back(result);
+            }
+            int next = current->pointers[current->order - 1];
+            if (next >= 0 && compare(current->keys[i], key) < 0)
+            {                
+                close_page(current);
+                current = load_page(next);
+            }
+            else
+            {
+                close_page(current);
+                break;
+            }
+        }
+    }
+
+
 
     BTNode * leaf = search_leaf(key);
 
@@ -484,25 +520,62 @@ vector<RID> BTree::selects(int operand, void * key)
         if (compare(leaf->keys[slot], key) == 0)
             break;
 
-    if ((operand == OP_EQ || operand == OP_LE || operand == OP_GE) && 
-        slot == leaf->num_keys)
-    {
-        RID result;
-        result.page_num = (leaf->pointers[slot] >> 16) & 0xffff;
-        result.slot_num = leaf->pointers[slot] & 0xffff;
-        rid_list.push_back(result);
-    }
+    if (operand == OP_EQ || operand == OP_GE || operand == OP_LE)
+        if (slot != leaf->num_keys)
+        {
+            RID result;
+            result.page_num = (leaf->pointers[slot] >> 16) & 0xffff;
+            result.slot_num = leaf->pointers[slot] & 0xffff;
+            rid_list.push_back(result);
+        }
 
-    if (operand == OP_LT || operand == OP_LE || operand == OP_NE)
-    {
 
-    }
 
     if (operand == OP_GT || operand == OP_GE || operand == OP_NE)
     {
+        BTNode * current = leaf;
+        while (1)
+        {
+            int i;
+            for (i = 0; i < current->num_keys; i++)
+            {
+                if (compare(current->keys[i], key) > 0)
+                {
+                    RID result;
+                    result.page_num = (current->pointers[i] >> 16) & 0xffff;
+                    result.slot_num = current->pointers[i] & 0xffff;
 
+                    rid_list.push_back(result);                    
+                }
+            }
+            int next = current->pointers[current->order - 1];
+            if (next >= 0)
+            {                
+                close_page(current);
+                current = load_page(next);
+            }
+            else
+            {
+                close_page(current);
+                break;
+            }
+        }
     }
 
-    close_page(leaf);
+
+    //close_page(leaf);
     return rid_list;
+}
+
+BTNode * BTree::get_left_most()
+{
+    BTNode * node = load_page(root);
+    int next;
+    while (node->is_leaf == false)
+    {
+        next = node->pointers[0];
+        close_page(node);
+        node = load_page(next);
+    }
+    return node;
 }
