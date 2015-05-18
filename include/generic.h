@@ -44,6 +44,7 @@ const uint32_t OP_GT = 3;	// great than
 const uint32_t OP_LE = 4;	// less or equal
 const uint32_t OP_GE = 5;	// great or equal
 const uint32_t OP_NE = 6;	// not equal
+const uint32_t OP_AL = 7;	// all objects
 
 // If using buffer componment, set this def.
 // Remove this define will use direct-write technique.

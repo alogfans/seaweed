@@ -24,12 +24,13 @@
 
 struct StorageHeader 
 {
-	char magic[16];		// should be "Seaweed DB File\0"
+	char magic[16];		    // should be "Seaweed DB File\0"
 	uint32_t used_pages;
 	uint32_t allot_pages;
 	uint32_t bitmap_checksum;
-	uint32_t root_page;	// first available page, must be B-tree index
-	char reserved[32];
+	int schema_table;	// first available page, must be B-tree index
+	int schema_index;
+	char reserved[28];
 };
 
 // each bitmap item is 8-bit (1 byte), as the figure below shown

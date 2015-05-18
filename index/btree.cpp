@@ -481,6 +481,35 @@ vector<RID> BTree::selects(int operand, void * key)
     if (root < 0)
         return rid_list;
 
+    if (operand == OP_AL)
+    {
+        BTNode * current = get_left_most();
+
+        while (1)
+        {
+            int i;
+            for (i = 0; i < current->num_keys; i++)
+            {
+                RID result;
+                result.page_num = (current->pointers[i] >> 16) & 0xffff;
+                result.slot_num = current->pointers[i] & 0xffff;
+                rid_list.push_back(result);
+            }
+            int next = current->pointers[current->order - 1];
+            if (next >= 0)
+            {                
+                close_page(current);
+                current = load_page(next);
+            }
+            else
+            {
+                close_page(current);
+                break;
+            }
+        }
+        return rid_list;
+    }
+
     if (operand == OP_LT || operand == OP_LE || operand == OP_NE)
     {
 //cout << "ok";
