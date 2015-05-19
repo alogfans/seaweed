@@ -34,6 +34,7 @@ TEST(storage_test, simple)
     columns[1].length = 16;
 
     schema.create_table("table_main", 2, columns);
+
     schema.create_index("table_main", "index");
 
     schema.open_table("table_main");
@@ -43,15 +44,25 @@ TEST(storage_test, simple)
         data.index = i;
         sprintf(data.msg, "Text of %d.", i);
         schema.insert_record(&data);
+
+        if (i > 3800)
+            schema.delete_record(&data);
         //cout << "completed" << endl;
     }
-    cout << schema.count() << endl;
+    //cout << schema.count() << endl;
     schema.close_table();
 }
 
 TEST(storage_test, advance)
 {
+    Storage stor;
+    stor.open_file("test.db");
+    Schema schema(stor);
 
+    schema.open_table("table_main");
+    vector<void *> vecs = schema.select_record(OP_AL, "index", NULL);
+    cout << vecs.size() << endl;
+    schema.close_table();
 }
 
 int main(int argc, char *argv[])

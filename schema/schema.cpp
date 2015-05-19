@@ -91,36 +91,51 @@ void Schema::create_index(const char * tb_name, const char * column_title)
 
 	int property_id = -1;
 	int current_index = -1;
-	int offset = 0;
+	int offset_property = 0;
+	int offset_current = 0;
 
-	for (int i = 0; i < n_columns && property_id < 0 && current_index < 0; i++)
+	for (int i = 0; i < n_columns && property_id < 0; i++)
 	{		
 		if (strncmp(columns[i].title, column_title, 32) == 0)
 			property_id = i;
 		else
-			offset += columns[i].length;
-
-		if (columns[i].index_root >= 0)
-			current_index = i;
+			offset_property += columns[i].length;
 	}
 
+	for (int i = 0; i < n_columns && current_index < 0; i++)
+	{		
+		if (columns[i].index_root >= 0)
+			current_index = i;
+		else
+			offset_current += columns[i].length;
+	}
+//cout << offset_property << "\t" << offset_current << endl;
 	if (property_id >= 0 && columns[property_id].index_root < 0)
 	{
 		columns[property_id].index_root = index->create_index(record_root, 
 			columns[property_id].type, columns[property_id].length);
-
+//cout << columns[property_id].index_root << endl;
 		if (current_index >= 0)
 		{
+			//cout << column_title << endl;
 			vector<void *> vecs;
-			vecs = select_record(OP_AL, columns[current_index].title, NULL);
+
+			Index index_reference(stor);
+			index_reference.open_table(record_root, columns[current_index].index_root);
+			vecs = index_reference.select_record(OP_AL, NULL);
+			index_reference.close_table(record_root, columns[current_index].index_root);
+
 			BTree btree(stor, columns[property_id].index_root);
+			BTree current_btree(stor, columns[current_index].index_root);
+
 			for (int i = 0; i < vecs.size(); i++)
 			{
-				BTree current_btree(stor, columns[current_index].index_root);
-				RID rid = current_btree.search((void *)((byte *)vecs[i] + offset));
-				btree.insert((void *)((byte *)vecs[i] + offset), rid);
+				RID rid = current_btree.search((void *)((byte *)vecs[i] + offset_current));
+				//cout << rid.page_num << endl;
+				btree.insert((void *)((byte *)vecs[i] + offset_property), rid);
 			}
 			columns[property_id].index_root = btree.get_root();
+//cout << columns[property_id].index_root << endl;
 		}
 	}
 	deconstruct();
