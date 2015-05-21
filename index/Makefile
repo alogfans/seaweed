@@ -7,18 +7,23 @@ CFLAGS := -g -Wall -Werror -Wextra -std=gnu99
 CXX := g++
 CXXFLAGS := -g -Wall -Werror -Wextra
 
+AR := ar
+ARFLAGS := cr
+
 INCLUDE := ../include
-LIBS := ../lib
+LIB_DIR := ../lib
 
-EXEC := index_test
-DEPS := index.cpp btree.cpp btnode.cpp ../storage/storage.cpp ../storage/hashtable.cpp ../storage/buffer.cpp ../entity/entity.cpp ../entity/entity_bitmap.cpp ../entity/record.cpp
+SRCS := btnode.cpp btree.cpp index.cpp
+OBJS := $(SRCS:.cpp=.o)
+LIB := $(LIB_DIR)/libindex.a
 
+all: $(LIB)
 
-
-$(EXEC):
-	$(CXX) $(EXEC).cpp $(DEPS) -o $(EXEC) -I$(INCLUDE) -L$(LIBS) -lgtest -lpthread
-	./$(EXEC)
-	$(RM) $(EXEC)
+$(LIB):
+	$(CXX) -c $(SRCS) -I$(INCLUDE) -L$(LIB_DIR)
+	$(AR) $(ARFLAGS) $@ $(OBJS)
 
 clean:
-	$(RM) *.o $(EXEC) *.db
+	$(RM) $(OBJS) $(LIB)
+
+.PHONY: all clean

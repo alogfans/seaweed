@@ -7,17 +7,23 @@ CFLAGS := -g -Wall -Werror -Wextra -std=gnu99
 CXX := g++
 CXXFLAGS := -g -Wall -Werror -Wextra
 
+AR := ar
+ARFLAGS := cr
+
 INCLUDE := ../include
-LIBS := ../lib
+LIB_DIR := ../lib
 
-EXEC := record_test
-DEPS := record.cpp entity.cpp entity_bitmap.cpp ../storage/storage.cpp ../storage/hashtable.cpp ../storage/buffer.cpp 
+SRCS := entity.cpp entity_bitmap.cpp record.cpp
+OBJS := $(SRCS:.cpp=.o)
+LIB := $(LIB_DIR)/libentity.a
 
+all: $(LIB)
 
-$(EXEC):
-	$(CXX) $(EXEC).cpp $(DEPS) -o $(EXEC) -I$(INCLUDE) -L$(LIBS) -lgtest -lpthread
-	./$(EXEC)
-	$(RM) $(EXEC)
+$(LIB):
+	$(CXX) -c $(SRCS) -I$(INCLUDE) -L$(LIB_DIR)
+	$(AR) $(ARFLAGS) $@ $(OBJS)
 
 clean:
-	$(RM) *.o $(EXEC) test.db
+	$(RM) $(OBJS) $(LIB)
+
+.PHONY: all clean

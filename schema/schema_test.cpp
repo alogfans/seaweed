@@ -44,9 +44,14 @@ TEST(storage_test, simple)
         data.index = i;
         sprintf(data.msg, "Text of %d.", i);
         schema.insert_record(&data);
+    }
 
-        if (i > 3800)
-            schema.delete_record(&data);
+    for (int i = 3000; i < 4000; i++)
+    {
+        DATA data;
+        data.index = i;
+        sprintf(data.msg, "Text of %d.", i);
+        schema.delete_record(&data);
         //cout << "completed" << endl;
     }
     //cout << schema.count() << endl;
@@ -59,8 +64,9 @@ TEST(storage_test, advance)
     stor.open_file("test.db");
     Schema schema(stor);
 
+    schema.create_index("table_main", "msg");
     schema.open_table("table_main");
-    vector<void *> vecs = schema.select_record(OP_AL, "index", NULL);
+    vector<void *> vecs = schema.select_record(OP_AL, "msg", NULL);
     cout << vecs.size() << endl;
     schema.close_table();
 }

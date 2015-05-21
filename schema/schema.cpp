@@ -51,7 +51,7 @@ void Schema::create_table(const char * tb_name, int n_columns, Column * columns)
 {
 	if (sizeof(Column) * n_columns + 8 > SizeOfPage)
 		throw logic_error("too many columns");
-
+	//cout << n_columns << endl;
 	table_root = stor.acquire_page();
 
 	TableInfo table_info;
@@ -74,7 +74,7 @@ void Schema::create_table(const char * tb_name, int n_columns, Column * columns)
 	}
 
 	int record_root = index->create_table(n_columns, entity_properties);
-//cout << record_root << endl;
+	//cout << record_root << endl;
 	delete [] entity_properties;
 
 	memcpy(buffer, &record_root, 4);

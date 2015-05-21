@@ -7,17 +7,23 @@ CFLAGS := -g -Wall -Werror -Wextra -std=gnu99
 CXX := g++
 CXXFLAGS := -g -Wall -Werror -Wextra
 
+AR := ar
+ARFLAGS := cr
+
 INCLUDE := ../include
-LIBS := ../lib
+LIB_DIR := ../lib
 
-EXEC := storage_test
-DEPS := storage.cpp buffer.cpp hashtable.cpp
+SRCS := buffer.cpp hashtable.cpp storage.cpp
+OBJS := $(SRCS:.cpp=.o)
+LIB := $(LIB_DIR)/libstorage.a
 
+all: $(LIB)
 
-$(EXEC):
-	$(CXX) $(EXEC).cpp $(DEPS) -o $(EXEC) -I$(INCLUDE) -L$(LIBS) -lgtest -lpthread
-	./$(EXEC)
-	$(RM) $(EXEC)
+$(LIB):
+	$(CXX) -c $(SRCS) -I$(INCLUDE) -L$(LIB_DIR)
+	$(AR) $(ARFLAGS) $@ $(OBJS)
 
 clean:
-	$(RM) *.o $(EXEC) test.db
+	$(RM) $(OBJS) $(LIB)
+
+.PHONY: all clean

@@ -13,9 +13,9 @@ ARFLAGS := cr
 INCLUDE := ../include
 LIB_DIR := ../lib
 
-SRCS := schema.cpp
+SRCS := seaweed.cpp
 OBJS := $(SRCS:.cpp=.o)
-LIB := $(LIB_DIR)/libschema.a
+LIB := $(LIB_DIR)/libconsole.a
 
 all: $(LIB)
 
